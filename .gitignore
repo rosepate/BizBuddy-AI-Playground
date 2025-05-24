@@ -1,0 +1,31 @@
+# Python cache & virtual env
+__pycache__/
+*.py[cod]
+*.egg
+*.egg-info/
+dist/
+build/
+env/
+venv/
+ENV/
+.venv/
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# VSCode or PyCharm IDE files
+.vscode/
+.idea/
+
+# Environment files / API keys
+.env
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Streamlit cache
+.streamlit/
+
+# Logs
+*.log
