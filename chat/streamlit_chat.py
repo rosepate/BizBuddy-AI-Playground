@@ -13,6 +13,11 @@ from agent.bizbuddy_agent import load_agent
 # Load environment variables
 load_dotenv()
 
+# ✅ Define chatbot function to be reused from main_app.py
+def chatbot_view(agent):
+    st.title("💬 BizBuddy AI Chatbot")
+    st.markdown("Ask any question about your supplement sales data.")
+    
 # Streamlit UI Setup
 st.set_page_config(page_title="BizBuddy AI", page_icon="🧠")
 st.title("💬 BizBuddy AI")
@@ -33,3 +38,4 @@ if st.button("Submit") and query:
             st.write(response)
         except Exception as e:
             st.error(f"⚠️ Error: {str(e)}")
+

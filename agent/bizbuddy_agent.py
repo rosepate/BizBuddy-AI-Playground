@@ -39,7 +39,8 @@ def load_agent():
     return agent
 
 
-    
+
+
 if __name__ == "__main__":
     agent = load_agent()
     # Try a sample query
