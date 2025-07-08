@@ -1,6 +1,9 @@
 import streamlit as st
 import plotly.express as px
 import pandas as pd
+import pdfkit
+import tempfile
+
 
 def dashboard_view(df):
     st.title("📊 Supplement Sales Dashboard")
@@ -70,3 +73,30 @@ def dashboard_view(df):
         filtered_df = filtered_df[filtered_df["Location"] == location]
 
     st.dataframe(filtered_df)
+
+    # 📄 Full dashboard print-to-PDF button
+    with st.expander("📄 Export Dashboard as PDF"):
+        st.markdown("""
+            <style>
+            .print-button {
+                background-color: #2b7de9;
+                color: white;
+                border: none;
+                padding: 10px 20px;
+                font-size: 16px;
+                border-radius: 8px;
+                cursor: pointer;
+            }
+            </style>
+
+            <center>
+            <button class="print-button" onclick="window.print()">📄 Download Full Dashboard as PDF</button>
+            </center>
+        """, unsafe_allow_html=True)
+
+        st.markdown("""
+            **How it works:**
+            - Click the button above
+            - When your browser's print window opens, choose **Destination: Save as PDF**
+            - Click **Save**
+        """)

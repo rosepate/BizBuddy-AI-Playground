@@ -15,7 +15,7 @@ load_dotenv()
 os.environ["OPENAI_API_KEY"] = os.getenv("OPENAI_API_KEY")
 
 # Load agent
-from agent.bizbuddy_agent import load_agent
+from agent.agent import load_agent
 agent = load_agent()
 
 # Load dataset
