@@ -19,10 +19,13 @@ from agent.agent import load_agent
 agent = load_agent()
 
 # Load dataset
-@st.cache_data
+@st.cache_data(ttl=60)
 def load_data():
-    df = pd.read_csv("agent/Supplement_Sales_Weekly_Expanded.csv")
-    df["Date"] = pd.to_datetime(df["Date"])
+    sheet_url = "https://docs.google.com/spreadsheets/d/1ktXvN1Y7HTVkM0WQhuEV8nyk8_NfWSi_7v2rSphbaN4/export?format=csv"
+    df = pd.read_csv(sheet_url)
+    # Rename Sale Date to Date if it exists
+    if "Sale Date" in df.columns:
+        df.rename(columns={"Sale Date": "Date"}, inplace=True)
     return df
 
 df = load_data()

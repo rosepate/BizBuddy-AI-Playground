@@ -6,21 +6,49 @@ import os
 from dotenv import load_dotenv
 
 def load_agent():
-    # Load environment
     load_dotenv()
     api_key = os.getenv("OPENAI_API_KEY")
     os.environ["OPENAI_API_KEY"] = api_key
 
-    # Load dataset
-    df = pd.read_csv("agent/Supplement_Sales_Weekly_Expanded.csv")
+    # Load from Google Sheet CSV
 
-    # Set up LLM
+    sheet_url = "https://docs.google.com/spreadsheets/d/1wKl1K0d0M_S_GUnOfw-duIhBc59YSU8KBKwWsPO26jI/export?format=csv"
+    df = pd.read_csv(sheet_url)
+
+# 🛡️ Handle date column gracefully
+    if "Order Date" in df.columns:
+        df.rename(columns={"Order Date": "Date"}, inplace=True)
+
+    if "Date" in df.columns:
+        try:
+            df["Date"] = pd.to_datetime(df["Date"], errors='coerce')
+        except Exception as e:
+            print("⚠️ Date conversion error:", e)
+
+    # ✅ Check for important columns needed for analytics
+    required_cols = ["Units Sold", "Revenue", "Cost Price", "Unit Price", "Profit", "Product", "Location", "Inventory After", "Date"]
+    missing_cols = [col for col in required_cols if col not in df.columns]
+    if missing_cols:
+        print(f"⚠️ Missing key columns: {missing_cols}")
+
+    # 🧾 Show columns and preview data
+    print("🧾 Columns in dataset:", df.columns.tolist())
+    print("🔍 Sample rows:\n", df.head())
+    # ✅ Ensure all required columns are present
+    for col in required_cols:
+        if col not in df.columns:
+            raise ValueError(f"Missing required column: {col}")
+    # ✅ Print first few rows for debugging
+    print("🔍 Sample data:\n", df.head()
+        )
+    
+    # ✅ Print column list for debugging
+    print("🧾 Columns in dataset:", df.columns.tolist())
+
+    # Set up the agent
     llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
-
-    # ✅ Add memory
     memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
 
-    # Create agent with memory
     agent = create_pandas_dataframe_agent(
         llm,
         df,
@@ -32,8 +60,8 @@ def load_agent():
     )
 
     return agent
+
 if __name__ == "__main__":
     agent = load_agent()
-    # Test the agent with a sample query
-    response = agent.run("What are the top 3 selling products by total number of sale?")
+    response = agent.invoke("What are the top 3 selling products by total number of sale?")
     print(response)
