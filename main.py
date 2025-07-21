@@ -28,6 +28,7 @@ def load_data():
         df.rename(columns={"Sale Date": "Date"}, inplace=True)
     return df
 
+
 df = load_data()
 
 # Import views

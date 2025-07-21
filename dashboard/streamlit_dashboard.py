@@ -3,44 +3,40 @@ import plotly.express as px
 import pandas as pd
 import pdfkit
 import tempfile
+import warnings
+from dotenv import load_dotenv
 
-# Dashboard view function
+st.set_page_config(page_title="📊 BizBuddy Sales Dashboard", page_icon="📈", layout="wide")
+
+# Load environment variables
+load_dotenv()
+
+# Load data
+import os
+
+sheet_url = "https://docs.google.com/spreadsheets/d/1ISS7IQOMPrAEqU7lnpJYM5W2zd4oynntnmMTiokiVNU/export?format=csv"
+df = pd.read_csv(sheet_url)
+
 @st.cache_data
 def load_data():
-    #Load Data from URL
-    sheet_url = "https://docs.google.com/spreadsheets/d/1wKl1K0d0M_S_GUnOfw-duIhBc59YSU8KBKwWsPO26jI/export?format=csv"
+    # Load Data from URL
     df = pd.read_csv(sheet_url)
-    
-    df.columns = df.columns.str.strip()
-    df.rename(columns={"Order Date": "Date"}, inplace=True)
-
-    if "Date" in df.columns:
-        df["Date"] = pd.to_datetime(df["Date"], errors='coerce')
-
-    if "Expiry Date" in df.columns:
-        df["Expiry Date"] = pd.to_datetime(df["Expiry Date"], errors='coerce')
-
-    # Handle missing values
-    df.fillna(0, inplace=True)
-    # Ensure all required columns are present
-    required_cols = ["Units Sold", "Revenue", "Cost Price", "Unit Price", "Profit", "Product", "Location", "Inventory After", "Date"]
-    for col in required_cols:
-        if col not in df.columns:
-            raise ValueError(f"Missing required column: {col}")
-    # Print columns and sample data for debugging
-    print("🧾 Columns in dataset:", df.columns.tolist())
-    print("🔍 Sample data:\n", df.head())
-
+    # Convert date column if found
+    date_cols = [col for col in df.columns if 'date' in col.lower()]
+    if date_cols:
+        df[date_cols[0]] = pd.to_datetime(df[date_cols[0]])
     return df
+
 df = load_data()
 
 # Streamlit UI setup
-st.title("Dashboard")
+
+st.title("📊Dashboard")
 st.markdown("This dashboard shows key metrics and trends.")
 
 # KPI Cards
 total_revenue = df["Revenue"].sum()
-total_units = df["Units Sold"].sum()
+total_units = df["Units_Sold"].sum()
 top_product = df.groupby("Product")["Revenue"].sum().idxmax()
 top_location = df.groupby("Location")["Revenue"].sum().idxmax()
 col1, col2, col3, col4 = st.columns(4)
@@ -52,32 +48,41 @@ col4.metric("📍 Top Location", top_location)
 # Revenue over time
 st.subheader("📈 Monthly Revenue Trend")
 monthly = df.groupby(pd.Grouper(key='Date', freq='M'))["Revenue"].sum().reset_index()
-st.line_chart(monthly.rename(columns={"Date": "Month"}).set_index("Month")) 
-# Revenue by Category
-st.subheader("📊 Revenue by Product Category")
-print(df.columns.tolist())
-df.columns = df.columns.str.strip()
+st.line_chart(monthly.rename(columns={"Date": "Month"}).set_index("Month"))
+
+# Revenue by Product
+st.subheader("📊 Revenue by Product")
 product_revenue = df.groupby("Product")["Revenue"].sum().sort_values(ascending=False)
-print("product Revenue:", product_revenue)
-st.bar_chart(product_revenue)
-category_revenue = df.groupby("Category")["Revenue"].sum().sort_values(ascending=False)
-st.bar_chart(category_revenue)
-#Revenue by Platform
-st.subheader("🛍️ Revenue by Platform")
-platform_revenue = df.groupby("Platform")["Revenue"].sum().sort_values(ascending=False)
-st.bar_chart(platform_revenue)
+fig = px.bar(product_revenue, x=product_revenue.index, y="Revenue",
+                labels={"x": "Product", "y": "Revenue"}, title="Revenue by Product Category")
+st.plotly_chart(fig, use_container_width=True)
+
 # Revenue by Location
-st.subheader("🗺️ Revenue by Location")
-location_revenue = df.groupby("Location")["Revenue"].sum().reset_index()
-fig = px.bar(location_revenue, x="Location", y="Revenue", color="Location", title="Revenue by Location")
-st.plotly_chart(fig)    
-# Low Inventory Alerts
-st.subheader("📦 Products with Low Inventory")
-low_stock = df[df["Inventory After"] < 20].groupby("Product")["Inventory After"].min().sort_values().reset_index().head(10)
-st.dataframe(low_stock)
-# Upcoming Expiry Medicines
-st.subheader("⏰ Upcoming Expiry Medicines (Next 60 Days)")
-exp_soon = df[df["Expiry Date"] <= pd.Timestamp.today() + pd.Timedelta(days=60)]
-st.dataframe(exp_soon[["Product", "Expiry Date", "Inventory After"]].drop_duplicates()) 
-# Download button
-st.download_button("📥 Download Full Data as CSV", df.to_csv(index=False), "pharmacy_data.csv", "text/csv") 
+st.subheader("📍 Revenue by Location")
+location_revenue = df.groupby("Location")["Revenue"].sum().sort_values(ascending=False)
+fig_location = px.bar(location_revenue, x=location_revenue.index, y="Revenue",
+                        labels={"x": "Location", "y": "Revenue"}, title="Revenue by Location")
+st.plotly_chart(fig_location, use_container_width=True)
+
+# Revenue by Platform
+st.subheader("💻 Revenue by Platform") 
+platform_revenue = df.groupby("Platform")["Revenue"].sum().sort_values(ascending=False)
+fig_platform = px.bar(platform_revenue, x=platform_revenue.index, y="Revenue",
+                        labels={"x": "Platform", "y": "Revenue"}, title="Revenue by Platform")
+st.plotly_chart(fig_platform, use_container_width=True)
+
+# Inventory Status
+st.subheader("📦 Inventory Status")
+inventory_status = df.groupby("Product")["Inventory_After"].sum().sort_values(ascending=False)
+fig_inventory = px.bar(inventory_status, x=inventory_status.index, y="Inventory_After",
+                        labels={"x": "Product", "y": "Inventory After"}, title="Inventory Status by Product")
+st.plotly_chart(fig_inventory, use_container_width=True)    
+
+#Product with low inventory
+st.subheader("⚠️ Products with Low Inventory")
+low_inventory = df[df["Inventory_After"] < 10]
+if not low_inventory.empty:
+    low_inventory = low_inventory.groupby("Product")["Inventory_After"].min().sort_values().reset_index().head(10)
+    st.table(low_inventory)
+else:
+    st.write("No products with low inventory.")

@@ -12,8 +12,10 @@ def load_agent():
 
     # Load from Google Sheet CSV
 
-    sheet_url = "https://docs.google.com/spreadsheets/d/1wKl1K0d0M_S_GUnOfw-duIhBc59YSU8KBKwWsPO26jI/export?format=csv"
+    sheet_url = "https://docs.google.com/spreadsheets/d/1ISS7IQOMPrAEqU7lnpJYM5W2zd4oynntnmMTiokiVNU/export?format=csv"
     df = pd.read_csv(sheet_url)
+    #print column names
+    print("📊 DataFrame loaded with columns:", df.columns.tolist()) 
 
 # 🛡️ Handle date column gracefully
     if "Order Date" in df.columns:
@@ -26,7 +28,7 @@ def load_agent():
             print("⚠️ Date conversion error:", e)
 
     # ✅ Check for important columns needed for analytics
-    required_cols = ["Units Sold", "Revenue", "Cost Price", "Unit Price", "Profit", "Product", "Location", "Inventory After", "Date"]
+    required_cols = ['Date', 'Product', 'Category', 'Units_Sold', 'Inventory_After', 'Location', 'Platform', 'Payment_Method', 'Product_Expiry_Date', ]
     missing_cols = [col for col in required_cols if col not in df.columns]
     if missing_cols:
         print(f"⚠️ Missing key columns: {missing_cols}")
